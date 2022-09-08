@@ -1,0 +1,60 @@
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+#include<unistd.h>
+#include<string.h>
+#include<stdlib.h>
+#include<netdb.h>
+
+int main(){
+    int sockid,bindid,listenid,acceptid,recvlen;
+    struct sockaddr_in server;
+    char sendline[100], recvline[100];
+
+    sockid = socket(AF_INET,SOCK_STREAM,0);
+
+    bzero(&server,sizeof(server));
+
+    server.sin_addr.s_addr = htonl(INADDR_ANY);
+    server.sin_port = htons(22000);
+    server.sin_family = AF_INET;
+
+    bindid =bind(sockid,(struct sockaddr *)&server, sizeof(server));
+    if(bindid==-1){
+        printf("Failed to bind");
+        exit(0);
+    }
+
+    listenid = listen(sockid,10);
+    if(listenid==-1){
+        printf("Failed to listen");
+        exit(0);
+    }
+
+    acceptid = accept(sockid,(struct sockaddr *)NULL, NULL);
+    if(acceptid==-1){
+        printf("Failed to establish connection");
+        exit(0);
+    }
+    int n;
+    while(1){
+        n=0;
+        bzero(sendline,100);
+        bzero(recvline,100);
+
+        recvlen =recv(acceptid,recvline,100,0);
+        recvline[recvlen] = '\0';
+        printf("%d \n",strncmp(recvline,"exit",4));
+        if(strncmp(recvline,"exit",4)==0){
+            printf("Connection Closed\n");
+            send(acceptid,"exit",4,0);
+            break;
+        }
+        printf("From Client : %sy",recvline);
+        while ((sendline[n++] = getchar()) != '\n') ;
+        send(acceptid,sendline,sizeof(sendline),0);
+    }
+
+    close(sockid);
+}
