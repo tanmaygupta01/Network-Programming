@@ -1,0 +1,49 @@
+#include<stdio.h>
+#include<sys/types.h>
+#include<sys/socket.h>
+#include<unistd.h>
+#include<arpa/inet.h>
+#include<netdb.h>
+#include<string.h>
+#include<stdlib.h>
+int main(){
+    int sockid, connectid;
+    struct sockaddr_in client;
+    char sendline[100], recvline[100];
+
+    sockid = socket(AF_INET,SOCK_STREAM,0);
+    if(sockid == -1){
+        printf("Failed to establish Socket");
+        exit(0);
+    }
+    bzero(&client,sizeof(client));
+
+    client.sin_addr.s_addr = htonl(INADDR_ANY);
+    client.sin_family = AF_INET;
+    client.sin_port = htons(22000);
+
+    connectid = connect(sockid,(struct sockaddr *)&client,sizeof(client));
+    if(connectid == -1){
+        printf("Failed to establish Connection");
+        exit(0);
+    }
+    int n;
+    while(1){
+        n=0;
+        bzero(sendline,100);
+        bzero(recvline,100);
+
+        printf("To server :");
+        while ((sendline[n++] = getchar()) != '\n') ;
+        printf("%d \n",sizeof(sendline));
+        send(sockid,sendline,n,0);
+        recv(sockid,recvline,100,0);
+        if(strncmp(recvline,"exit",4)==0){
+            printf("Connection Closed");
+            break;
+        }
+        printf("From Server : %s\n",recvline);
+    }
+    close(sockid);
+
+}
